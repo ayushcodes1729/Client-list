@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { IoSearchOutline } from "react-icons/io5"
 import { LuArrowDownUp } from "react-icons/lu"
 import { CiFilter } from "react-icons/ci"
@@ -256,7 +256,6 @@ function ClientList() {
     })
 
     const handleSort = (sortType: Sort, direction: "asc" | "desc") => {
-        // Update the direction for this sort type
         setSortDirections((prev) => ({
             ...prev,
             [sortType]: direction,
@@ -264,31 +263,39 @@ function ClientList() {
 
         // Check if this sort type is already in the configs
         const existingIndex = sortConfigs.findIndex((config) => config.type === sortType)
+        let newConfigs;
 
         if (existingIndex !== -1) {
             // Update existing sort config
-            const newConfigs = [...sortConfigs]
+            newConfigs = [...sortConfigs]
             newConfigs[existingIndex] = {
                 type: sortType,
                 direction,
                 id: newConfigs[existingIndex].id,
             }
-            setSortConfigs(newConfigs)
         } else {
             // Add new sort config
-            setSortConfigs([
+            newConfigs = [
                 ...sortConfigs,
                 {
                     type: sortType,
                     direction,
                     id: generateId(),
                 },
-            ])
+            ]
         }
+
+        // Update state with new configs
+        setSortConfigs(newConfigs)
+
+        // Save new configs to localStorage
+        localStorage.setItem('sortConfigs', JSON.stringify(newConfigs));
     }
 
     const removeSortConfig = (sortType: Sort) => {
-        setSortConfigs(sortConfigs.filter((config) => config.type !== sortType))
+        const newConfigs = sortConfigs.filter((config) => config.type !== sortType);
+        setSortConfigs(newConfigs)
+        localStorage.setItem('sortConfigs', JSON.stringify(newConfigs));
     }
 
     const isSortActive = (sortType: Sort, direction: "asc" | "desc") => {
@@ -330,8 +337,16 @@ function ClientList() {
 
         // Update state
         setSortConfigs(newSortConfigs)
+        localStorage.setItem('sortConfigs', JSON.stringify(newSortConfigs));
         setDragOverIndex(null)
     }
+
+    useEffect(() => {
+        const storedConfigs = localStorage.getItem('sortConfigs');
+        if (storedConfigs) {
+            setSortConfigs(JSON.parse(storedConfigs));
+        }
+    }, [])
 
     return (
         <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
